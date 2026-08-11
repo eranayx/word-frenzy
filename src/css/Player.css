@@ -1,0 +1,39 @@
+.player {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    width: max-content;
+    height: fit-content;
+}
+
+.name {
+    margin: 0;
+}
+
+.hearts {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.word {
+    margin-bottom: 0;
+    height: 3ch;
+}
+
+.frenzy-bar-container {
+    height: 0.5rem;
+    width: 7.5rem;
+    background-color: var(--bg);
+    color: var(--text);
+    border: 1px rgb(0, 0, 0) solid;
+    border-radius: 5px;
+}
+
+.frenzy-bar {
+    background-color: var(--accent);
+    height: 100%;
+    width: 0%;
+    animation: linear 1s forwards;
+    border-radius: 5px;
+}

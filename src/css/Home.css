@@ -1,0 +1,77 @@
+.hero {
+    hr {
+        width: 50%;
+    }
+
+    height: 100dvh;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+}
+
+.hero-title {
+    margin: 0;
+    padding: 3rem 1rem;
+    height: fit-content;
+    border-bottom: 1px white solid;
+    color: var(--text-h);
+    font-size: var(--fs-xl);
+}
+
+.subtext {
+    font-size: var(--fs-m);
+    color: var(--accent);
+    margin-top: 10px;
+}
+
+.cta {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 1.5rem;
+}
+
+.name-form {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    height: 100%;
+}
+
+.name-form label {
+    flex: 0;
+    white-space: nowrap;
+}
+
+.name-form input {
+    height: 3ch;
+    flex: 1;
+    border: 1px rgb(128, 128, 128) solid;
+    transition: all 0.3s ease;
+}
+
+.name-form input:focus {
+    border: 1px rgb(0, 0, 0) solid;
+    outline: none;
+}
+
+.cta-btns {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 3rem;
+}
+
+.start-btn {
+    background-color: var(--accent);
+    font-size: var(--fs-m);
+    color: var(--text);
+    padding: 0.75rem 3rem;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+}
+
+.start-btn:hover {
+    cursor: pointer;
+}

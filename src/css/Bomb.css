@@ -1,0 +1,57 @@
+.bomb {
+    height: 15%;
+    aspect-ratio: 1;
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1em;
+}
+
+.bomb-figure {
+    height: 100%;
+    aspect-ratio: 1;
+    background-color: rgb(61, 57, 57);
+    border-radius: 50%;
+    animation: vibrate 0.25s infinite;
+
+    p {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-variant: small-caps;
+        font-size: var(--fs-l);
+        letter-spacing: 0.25em;
+        height: 100%;
+        width: 100%;
+        transform: translateX(0.125em);
+        margin: 0;
+    }
+}
+
+@keyframes vibrate {
+    0% {
+        scale: 1;
+    }
+
+    50% {
+        scale: 1.025;
+    }
+
+    100% {
+        scale: 1;
+    }
+}
+
+.bomb-figure::before {
+    content: "";
+    position: absolute;
+    box-sizing: border-box;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 5px rgb(201, 194, 194) solid;
+    height: 100%;
+    width: 100%;
+    border-radius: 50%;
+}
