@@ -8,24 +8,21 @@
     gap: 1em;
 }
 
-.bomb-figure {
+.bomb-model {
     height: 100%;
     aspect-ratio: 1;
     background-color: rgb(61, 57, 57);
     border-radius: 50%;
     animation: vibrate 0.25s infinite;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 
     p {
-        display: flex;
-        justify-content: center;
-        align-items: center;
         font-variant: small-caps;
         font-size: var(--fs-l);
         letter-spacing: 0.25em;
-        height: 100%;
-        width: 100%;
-        transform: translateX(0.125em);
-        margin: 0;
+        transform: translateX(0.125em) translateY(-0.125em);
     }
 }
 
@@ -43,7 +40,7 @@
     }
 }
 
-.bomb-figure::before {
+.bomb-model::before {
     content: "";
     position: absolute;
     box-sizing: border-box;

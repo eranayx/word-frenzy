@@ -2,25 +2,29 @@ import { useEffect, useState } from "react";
 
 import { Heart, User } from "@boxicons/react";
 
+import { isValidWord } from "../services/api";
+import { useGameContext } from "../contexts/GameContext";
 import "../css/Player.css";
 
 type PlayerProps = {
     name: string;
-    time: number;
-    onEnter: () => void;
 };
 
-function Player({ name, time, onEnter }: PlayerProps) {
+function Player({ name }: PlayerProps) {
+    const FRENZY_LIMIT = 30;
+
     const [word, setWord] = useState<string>("");
     const [totalPoints, setTotalPoints] = useState<number>(0);
     const [frenzyPoints, setFrenzyPoints] = useState<number>(0);
-
-    const FRENZY_LIMIT = 50;
+    const { time, substring, resetTime, changeSubstring } = useGameContext();
 
     useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent): void => {
-            if (word.length > 0 && e.key === "Enter") {
-                onEnter();
+        const handleKeyDown = async (e: KeyboardEvent) => {
+            if (e.key === "Enter") {
+                if (word.length < 0) return;
+                if (!word.includes(substring)) return;
+                if (!(await isValidWord(word))) return;
+
                 setWord("");
                 setTotalPoints((prev) => prev + time);
                 setFrenzyPoints((prev) => {
@@ -30,6 +34,8 @@ function Player({ name, time, onEnter }: PlayerProps) {
 
                     return Math.min(prev + time, FRENZY_LIMIT);
                 });
+                resetTime();
+                changeSubstring();
             }
 
             if (e.key === "Backspace") {

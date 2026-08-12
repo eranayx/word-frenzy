@@ -1,0 +1,10 @@
+.error-page {
+    height: 100dvh;
+    padding: 5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.error-msg {
+    font-size: var(--fs-xl);
+}
