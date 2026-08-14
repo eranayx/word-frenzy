@@ -1,8 +1,8 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { usePlayerContext } from "../contexts/PlayerContext";
 import "../css/Home.css";
-import { useState } from "react";
 
 function Home() {
     const [name, setName] = useState<string>("");

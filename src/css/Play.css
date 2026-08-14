@@ -1,7 +1,7 @@
 .play-page {
     height: 100dvh;
-    display: grid;
-    grid-template-columns: 80% 20%;
+    display: flex;
+    flex-flow: row nowrap;
 }
 
 .game {

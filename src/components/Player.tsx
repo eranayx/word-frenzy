@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { Heart, User } from "@boxicons/react";
 
-import { isValidWord } from "../services/api";
+import { isValidWord } from "../../server/services/api";
 import { useGameContext } from "../contexts/GameContext";
 import "../css/Player.css";
 

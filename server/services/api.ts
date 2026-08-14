@@ -11,5 +11,7 @@ export const generateRandomString = async () => {
 export const isValidWord = async (word: string) => {
     const response = await fetch(`${DICTIONARY_BASE_URL}/${word}`);
 
-    return response.ok
+    return response.ok;
 };
+
+// Convert everything to websocket connections to reduce overhead

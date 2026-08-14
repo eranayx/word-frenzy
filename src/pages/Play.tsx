@@ -14,10 +14,7 @@ function Play() {
             <div className="game">
                 <div className="players">
                     {players.map((player, i) => (
-                        <Player
-                            name={player.name}
-                            key={i}
-                        />
+                        <Player name={player.name} key={i} />
                     ))}
                 </div>
                 <Bomb />

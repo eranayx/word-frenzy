@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { generateRandomString } from "../services/api";
+
+import { generateRandomString } from "../../server/services/api";
 
 type GameContextType = {
     time: number;

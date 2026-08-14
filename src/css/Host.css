@@ -1,9 +1,16 @@
 .host-page {
-    height: 85%;
-    padding: 0 5rem;
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 2rem;
+    height: 100%;
+}
+
+.lobby {
+    padding: 3rem;
     display: flex;
     flex-flow: column nowrap;
     align-items: center;
+    flex: 1;
 }
 
 .game-name {
