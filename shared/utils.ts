@@ -1,5 +1,6 @@
+const CODE_LENGTH = 5;
+
 export function generateRoomCode(): string {
-    const CODE_LENGTH = 5;
     let roomCode = "";
 
     const A = 65;

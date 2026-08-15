@@ -1,18 +1,17 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import Home from "./pages/Home";
-import Host from "./pages/Host";
+import Lobby from "./pages/Lobby";
 import PageNotFound from "./pages/PageNotFound";
 import Play from "./pages/Play";
 import Winner from "./pages/Winner";
 import { GameProvider } from "./contexts/GameContext";
-import { PlayerProvider } from "./contexts/PlayerContext";
 
 import "./css/App.css";
 
 const router = createBrowserRouter([
     { path: "/", element: <Home /> },
-    { path: "/host", element: <Host /> },
+    { path: "/lobby/:roomId", element: <Lobby /> },
     {
         path: "/play",
         element: (
@@ -27,9 +26,9 @@ const router = createBrowserRouter([
 
 function App() {
     return (
-        <PlayerProvider>
+        <>
             <RouterProvider router={router} />
-        </PlayerProvider>
+        </>
     );
 }
 
