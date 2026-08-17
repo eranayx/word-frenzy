@@ -1,104 +1,76 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { io, type Socket } from "socket.io-client";
-
+import { useSocketContext } from "../contexts/SocketContext";
 import { generateRoomCode } from "../../shared/utils";
-import { type Player } from "../../shared/interfaces";
+import { type Player } from "../../shared/types";
 import "../css/Home.css";
-import { getJoinableRoomCode } from "../../server/services/rooms";
 
 function Home() {
     const [name, setName] = useState<string>("");
     const [roomCode, setRoomCode] = useState<string>("");
-    const [joiningRoom, setJoiningRoom] = useState<boolean>(false);
+    const socket = useSocketContext();
     const navigate = useNavigate();
 
-    const socketRef = useRef<Socket | null>(null);
-    useEffect(() => {
-        const socket = io(import.meta.env.VITE_SERVER_URL);
-        socketRef.current = socket;
-
-        return () => {
-            socket.disconnect();
-        };
-    }, []);
-
-    function handlePlay(): void {
-        if (!name) {
-            return;
+    function generatePlayer(): Player | null {
+        if (!name || !socket || !socket.id) {
+            return null;
         }
-        if (!socketRef.current || !socketRef.current.id) return;
 
         const player: Player = {
             name: name,
-            id: socketRef.current.id,
+            id: socket.id,
         };
 
-        const code = getJoinableRoomCode() || generateRoomCode();
-        socketRef.current.emit("add_player", { player, code });
-        navigate("/play");
+        return player;
+    }
+
+    async function handlePlay(): Promise<void> {
+        const player = generatePlayer();
+        if (!socket || !player) return;
+
+        const code: string | null = await socket.emitWithAck(
+            "get_joinable_room_code",
+        );
+        if (code === null) return;
+
+        socket.emit("add_player", { player, code });
+        navigate(`/play/${code}`);
     }
 
     function handleHost(): void {
-        if (!name || !socketRef.current || !socketRef.current.id) return;
-        const player: Player = {
-            name: name,
-            id: socketRef.current.id,
-        };
+        const player = generatePlayer();
+        if (!socket || !player) return;
 
         const code = generateRoomCode();
-        socketRef.current.emit("add_player", player, code);
-        navigate(`/lobby/${code}`, { state: { initialPlayers: player } });
+
+        socket.emit("add_player", player, code);
+        navigate(`/lobby/${code}`);
     }
 
-    function handleJoin(): void {
+    const [isJoiningRoom, setIsJoiningRoom] = useState<boolean>(false);
+    async function handleJoin(): Promise<void> {
         if (!name) return;
-        if (!joiningRoom) {
-            const nameForm = document.getElementById("name-form");
-            const roomCodeForm = document.getElementById("room-code-form");
-            const playBtn = document.getElementById("play-btn");
-            const hostBtn = document.getElementById("host-btn");
-            const backBtn = document.getElementById("back-btn");
-            const HIDDEN = "hidden";
-
-            nameForm?.classList.add(HIDDEN);
-            roomCodeForm?.classList.remove(HIDDEN);
-            playBtn?.classList.add(HIDDEN);
-            hostBtn?.classList.add(HIDDEN);
-            backBtn?.classList.remove(HIDDEN);
-
-            setJoiningRoom(true);
+        if (!isJoiningRoom) {
+            setRoomCode("");
+            setIsJoiningRoom(true);
             return;
         }
+        if (!socket || !roomCode) return;
 
-        // check if valid room code
+        const isValid: boolean = await socket.emitWithAck(
+            "check_valid_code",
+            roomCode,
+        );
+        if (!isValid) return;
 
-        if (!roomCode) return;
-        if (!socketRef.current || !socketRef.current.id) return;
-        const player: Player = {
-            name: name,
-            id: socketRef.current.id,
-        }
-        socketRef.current.emit("add_player", player, roomCode);
+        const player = generatePlayer();
+        socket.emit("add_player", player, roomCode);
         navigate(`/lobby/${roomCode}`);
     }
 
     function handleBack(): void {
-        const nameForm = document.getElementById("name-form");
-        const roomCodeForm = document.getElementById("room-code-form");
-        const playBtn = document.getElementById("play-btn");
-        const hostBtn = document.getElementById("host-btn");
-        const backBtn = document.getElementById("back-btn");
-        const HIDDEN = "hidden";
-
-        nameForm?.classList.remove(HIDDEN);
-        roomCodeForm?.classList.add(HIDDEN);
-        playBtn?.classList.remove("hidden");
-        hostBtn?.classList.remove("hidden");
-        backBtn?.classList.add("hidden");
-
-        setJoiningRoom(false);
+        setIsJoiningRoom(false);
     }
 
     return (
@@ -108,63 +80,84 @@ function Home() {
                 <p className="subtext">A unique twist on an iconic game</p>
             </div>
             <div className="cta">
-                <form id="name-form" className="cta-form">
-                    <label className="cta-label" htmlFor="name">
-                        Enter name:{" "}
-                    </label>
-                    <input
-                        id="name"
-                        className="cta-input"
-                        type="text"
-                        name="name"
-                        autoComplete="off"
-                        onChange={(e) => {
-                            setName(e.target.value);
-                        }}
-                    />
-                </form>
-                <form id="room-code-form" className="cta-form hidden">
-                    <label className="cta-label" htmlFor="name">
-                        Enter room code:{" "}
-                    </label>
-                    <input
-                        id="room-code"
-                        className="cta-input"
-                        type="text"
-                        name="room-code"
-                        autoComplete="off"
-                        onChange={(e) => {
-                            setRoomCode(e.target.value);
-                        }}
-                    />
-                </form>
+                {isJoiningRoom ? (
+                    <form
+                        id="room-code-form"
+                        className="cta-form"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            handleJoin();
+                        }}>
+                        <label className="cta-label" htmlFor="room-code">
+                            Enter room code:{" "}
+                        </label>
+                        <input
+                            id="room-code"
+                            className="cta-input"
+                            type="text"
+                            name="room-code"
+                            autoComplete="off"
+                            value={roomCode}
+                            onChange={(e) => {
+                                setRoomCode(e.target.value);
+                            }}
+                        />
+                    </form>
+                ) : (
+                    <form
+                        id="name-form"
+                        className="cta-form"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            handlePlay();
+                        }}>
+                        <label className="cta-label" htmlFor="name">
+                            Enter name:{" "}
+                        </label>
+                        <input
+                            id="name"
+                            className="cta-input"
+                            type="text"
+                            name="name"
+                            autoComplete="off"
+                            value={name}
+                            onChange={(e) => {
+                                setName(e.target.value);
+                            }}
+                        />
+                    </form>
+                )}
+
                 <div className="cta-btn-container">
-                    <div className="main-menu">
-                        <button
-                            id="play-btn"
-                            className="cta-btn"
-                            onClick={handlePlay}>
-                            Play
-                        </button>
-                        <button
-                            id="host-btn"
-                            className="cta-btn"
-                            onClick={handleHost}>
-                            Host
-                        </button>
+                    {isJoiningRoom ? (
                         <button
                             id="back-btn"
-                            className="cta-btn hidden"
+                            className="cta-btn"
                             onClick={handleBack}>
                             Back
                         </button>
-                        <button
-                            id="join-btn"
-                            className="cta-btn"
-                            onClick={handleJoin}>
-                            Join
-                        </button>
-                    </div>
+                    ) : (
+                        <>
+                            <button
+                                id="play-btn"
+                                className="cta-btn"
+                                onClick={handlePlay}>
+                                Play
+                            </button>
+                            <button
+                                id="host-btn"
+                                className="cta-btn"
+                                onClick={handleHost}>
+                                Host
+                            </button>
+                        </>
+                    )}
+                    <button
+                        id="join-btn"
+                        className="cta-btn"
+                        onClick={handleJoin}>
+                        Join
+                    </button>
                 </div>
             </div>
         </div>

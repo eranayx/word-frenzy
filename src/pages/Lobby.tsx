@@ -1,56 +1,42 @@
-import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
-import { io, Socket } from "socket.io-client";
 import { User } from "@boxicons/react";
 
 import Chat from "../components/Chat";
-import type { Player } from "../../shared/interfaces";
+import { useSocketContext } from "../contexts/SocketContext";
+import type { Player } from "../../shared/types";
 import "../css/Lobby.css";
 
 function Lobby() {
     const MAX_PLAYERS = 8;
     const navigate = useNavigate();
+    const { roomCode } = useParams();
+    const socket = useSocketContext();
 
-    const socketRef = useRef<Socket | null>(null);
+    const [players, setPlayers] = useState<Player[]>([]);
     useEffect(() => {
-        const socket = io(import.meta.env.VITE_SERVER_URL);
-        socketRef.current = socket;
-
-        return () => {
-            socket.disconnect();
-        };
-    }, []);
-
-    const location = useLocation();
-    const [players, setPlayers] = useState<Player[]>([
-        location.state?.initialPlayers,
-    ]);
-    useEffect(() => {
-        const socket = socketRef.current;
-        if (socket === null) return;
+        if (!socket) return;
 
         function updatePlayers(data: Player[]): void {
-            console.log("hello world");
-            console.log(data.map((p) => p.name));
             setPlayers(data);
         }
 
         socket.on("player_joined", updatePlayers);
+        socket.once("recieve_players", updatePlayers);
+        socket.emit("get_players", roomCode);
 
         return () => {
             socket.off("player_joined", updatePlayers);
         };
     }, []);
 
-    const { roomId } = useParams();
-
     return (
         <div className="host-page">
             <div className="lobby">
                 <h1 className="game-name">Word Frenzy</h1>
                 <h1>
-                    {players.length} / {MAX_PLAYERS} | Room Code: {roomId}
+                    {players.length} / {MAX_PLAYERS} | Room Code: {roomCode}
                 </h1>
                 <div className="players-lobby">
                     {players.map((player) => (
@@ -61,14 +47,16 @@ function Lobby() {
                     ))}
                 </div>
                 <button
-                    className="cta-btn"
+                    className={`cta-btn ${players.length > 1 ? "btn-active" : "btn-disabled"}`}
                     onClick={() => {
-                        navigate("/play");
+                        if (players.length > 1) {
+                            navigate(`/play/${roomCode}`);
+                        }
                     }}>
                     Play
                 </button>
             </div>
-            <Chat />
+            <Chat roomCode={roomCode || ""} />
         </div>
     );
 }

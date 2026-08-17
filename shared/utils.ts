@@ -12,3 +12,9 @@ export function generateRoomCode(): string {
 
     return roomCode;
 }
+
+// export function generateRandomColor(): string {
+//     let color = ""
+
+//     return color
+// }

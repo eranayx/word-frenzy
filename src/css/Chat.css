@@ -4,6 +4,7 @@
     padding: 2rem 1rem;
     display: flex;
     flex-flow: column nowrap;
+    justify-content: space-between;
     gap: 1rem;
 }
 
@@ -11,14 +12,20 @@
     display: flex;
     flex-flow: column nowrap;
     align-items: flex-start;
-    flex: 1;
     padding: 0 1rem;
     gap: 1rem;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 .message-history p {
     margin: 0;
+}
+
+.message {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 .chat form {
@@ -48,4 +55,5 @@
 
 .chat button:hover {
     background-color: #606060;
+    cursor: pointer;
 }

@@ -1,9 +1,10 @@
-import type { Player, Room } from "../../shared/interfaces";
+import type { Player, Room } from "../../shared/types";
+import { addPlayer as addPlayerGlobal } from "./playerServices";
 
 const rooms = new Map<string, Room>();
 
-export const getPlayers = (roomId: string): Player[] => {
-    const room = rooms.get(roomId);
+export const getPlayers = (roomCode: string): Player[] => {
+    const room = rooms.get(roomCode);
     if (room === undefined) {
         throw new Error("Invalid room ID.");
     }
@@ -11,15 +12,15 @@ export const getPlayers = (roomId: string): Player[] => {
     return room.players;
 };
 
-export const addPlayer = (player: Player, roomId: string): void => {
-    const room = rooms.get(roomId) ?? { players: [] };
+export const addPlayer = (player: Player, roomCode: string): void => {
+    const room = rooms.get(roomCode) ?? { players: [], state: "lobby" };
     room.players.push(player);
-    rooms.set(roomId, room);
-    console.log(`added player ${player.name}`);
-    console.log(`room id: ${roomId}`);
-    console.log(
-        `entry in rooms: ${rooms.get(roomId)?.players.map((player) => player.name)}`,
-    );
+    rooms.set(roomCode, room);
+    addPlayerGlobal(player);
+};
+
+export const isValidRoomCode = (code: string): boolean => {
+    return rooms.get(code) !== undefined;
 };
 
 export const getJoinableRoomCode = (): string | null => {

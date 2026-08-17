@@ -35,3 +35,11 @@
     flex: 1;
     margin: 2rem 0;
 }
+
+.btn-disabled {
+    filter: brightness(0.75);
+}
+
+.btn-disabled:hover {
+    cursor: default;
+}

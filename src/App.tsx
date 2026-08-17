@@ -6,14 +6,14 @@ import PageNotFound from "./pages/PageNotFound";
 import Play from "./pages/Play";
 import Winner from "./pages/Winner";
 import { GameProvider } from "./contexts/GameContext";
-
+import { SocketProvider } from "./contexts/SocketContext";
 import "./css/App.css";
 
 const router = createBrowserRouter([
     { path: "/", element: <Home /> },
-    { path: "/lobby/:roomId", element: <Lobby /> },
+    { path: "/lobby/:roomCode", element: <Lobby /> },
     {
-        path: "/play",
+        path: "/play/:roomCode",
         element: (
             <GameProvider>
                 <Play />
@@ -26,9 +26,9 @@ const router = createBrowserRouter([
 
 function App() {
     return (
-        <>
+        <SocketProvider>
             <RouterProvider router={router} />
-        </>
+        </SocketProvider>
     );
 }
 
