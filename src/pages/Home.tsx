@@ -3,30 +3,25 @@ import { useNavigate } from "react-router-dom";
 
 import { useSocketContext } from "../contexts/SocketContext";
 import { generateRoomCode } from "../../shared/utils";
-import { type Player } from "../../shared/types";
+import { Player } from "../../shared/types";
 import "../css/Home.css";
 
 function Home() {
     const [name, setName] = useState<string>("");
     const [roomCode, setRoomCode] = useState<string>("");
-    const socket = useSocketContext();
+    const { socket, isConnected } = useSocketContext();
     const navigate = useNavigate();
 
-    function generatePlayer(): Player | null {
+    function generatePlayer(role: "host" | "player"): Player | null {
         if (!name || !socket || !socket.id) {
             return null;
         }
 
-        const player: Player = {
-            name: name,
-            id: socket.id,
-        };
-
-        return player;
+        return new Player(name, socket.id, role);
     }
 
     async function handlePlay(): Promise<void> {
-        const player = generatePlayer();
+        const player = generatePlayer("player");
         if (!socket || !player) return;
 
         const code: string | null = await socket.emitWithAck(
@@ -34,29 +29,31 @@ function Home() {
         );
         if (code === null) return;
 
+        player.current_room = code;
         socket.emit("add_player", { player, code });
         navigate(`/play/${code}`);
     }
 
     function handleHost(): void {
-        const player = generatePlayer();
+        const player = generatePlayer("host");
         if (!socket || !player) return;
 
         const code = generateRoomCode();
 
+        player.current_room = code;
         socket.emit("add_player", player, code);
         navigate(`/lobby/${code}`);
     }
 
     const [isJoiningRoom, setIsJoiningRoom] = useState<boolean>(false);
     async function handleJoin(): Promise<void> {
-        if (!name) return;
+        if (!socket || !name) return;
         if (!isJoiningRoom) {
             setRoomCode("");
             setIsJoiningRoom(true);
             return;
         }
-        if (!socket || !roomCode) return;
+        if (!roomCode) return;
 
         const isValid: boolean = await socket.emitWithAck(
             "check_valid_code",
@@ -64,7 +61,10 @@ function Home() {
         );
         if (!isValid) return;
 
-        const player = generatePlayer();
+        const player = generatePlayer("player");
+        if (!player) return;
+
+        player.current_room = roomCode;
         socket.emit("add_player", player, roomCode);
         navigate(`/lobby/${roomCode}`);
     }
@@ -72,6 +72,8 @@ function Home() {
     function handleBack(): void {
         setIsJoiningRoom(false);
     }
+
+    if (!socket || !isConnected) return;
 
     return (
         <div className="hero">

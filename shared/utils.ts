@@ -1,5 +1,7 @@
 const CODE_LENGTH = 5;
 
+
+
 export function generateRoomCode(): string {
     let roomCode = "";
 
@@ -16,5 +18,5 @@ export function generateRoomCode(): string {
 // export function generateRandomColor(): string {
 //     let color = ""
 
-//     return color
+//     return colorF
 // }

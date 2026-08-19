@@ -8,13 +8,29 @@ import "../css/Chat.css";
 
 interface ChatProps {
     roomCode: string;
+    setIsFocused?: (value: boolean) => void;
 }
 
-function Chat({ roomCode }: ChatProps) {
+function Chat({ roomCode, setIsFocused }: ChatProps) {
     const [message, setMessage] = useState<string>("");
     const [messageHistory, setMessageHistory] = useState<Message[]>([]);
     const [player, setPlayer] = useState<Player>();
-    const socket = useSocketContext();
+    const { socket, isConnected } = useSocketContext();
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const getPlayer = async (): Promise<void> => {
+            const player: Player = await socket.emitWithAck(
+                "get_current_player",
+                socket.id,
+            );
+
+            setPlayer(player);
+        };
+
+        getPlayer();
+    }, []);
 
     useEffect(() => {
         if (!socket) return;
@@ -24,16 +40,6 @@ function Chat({ roomCode }: ChatProps) {
         };
         socket.on("recieve_message", handleMessage);
 
-        const getPlayer = async (): Promise<void> => {
-            const player: Player = await socket.emitWithAck(
-                "get_player",
-                socket.id,
-            );
-
-            setPlayer(player);
-        };
-        getPlayer();
-
         return () => {
             socket.off("recieve_message", handleMessage);
         };
@@ -42,11 +48,17 @@ function Chat({ roomCode }: ChatProps) {
     const sendMessage = (e: React.MouseEvent) => {
         if (!socket) return;
 
-        socket.emit("send_message", { message: message, sender: player }, roomCode);
+        socket.emit(
+            "send_message",
+            { message: message, sender: player },
+            roomCode,
+        );
 
         e.preventDefault();
         setMessage("");
     };
+
+    if (!socket || !isConnected) return;
 
     return (
         <div className="chat">
@@ -68,12 +80,22 @@ function Chat({ roomCode }: ChatProps) {
                     value={message}
                     autoComplete="off"
                     onChange={(e) => {
-                        if (!socket || !socket.id) {
+                        if (!socket.id) {
                             throw new Error(
                                 "Socket refused to connect. Cannot send chat message.",
                             );
                         }
                         setMessage(e.target.value);
+                    }}
+                    onFocus={() => {
+                        if (setIsFocused) {
+                            setIsFocused(true);
+                        }
+                    }}
+                    onBlur={() => {
+                        if (setIsFocused) {
+                            setIsFocused(false);
+                        }
                     }}
                 />
                 <button type="submit" onClick={sendMessage}>

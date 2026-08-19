@@ -9,10 +9,11 @@ import type { Player } from "../../shared/types";
 import "../css/Play.css";
 
 function Play() {
-    const socket = useSocketContext();
+    const { socket, isConnected } = useSocketContext();
     const { roomCode } = useParams();
-
     const [players, setPlayers] = useState<Player[]>([]);
+    const [isFocusedOnChat, setIsFocusedOnChat] = useState<boolean>(false);
+
     useEffect(() => {
         if (!socket) return;
 
@@ -29,17 +30,39 @@ function Play() {
         };
     }, []);
 
+    useEffect(() => {
+        if (!socket) return;
+
+        socket.on("word_updated", (updatedPlayers: Player[]) => {
+            setPlayers(updatedPlayers);
+        });
+
+        return () => {
+            socket.off("word_updated");
+        };
+    }, []);
+
+    if (!socket || !isConnected) return;
+    if (!roomCode) {
+        throw new Error("No room code was assigned to this room.");
+    }
+
     return (
         <div className="play-page">
             <div className="game">
                 <div className="players">
                     {players.map((player) => (
-                        <PlayerComponent key={player.id} name={player.name} />
+                        <PlayerComponent
+                            key={player.id}
+                            player={player}
+                            roomCode={roomCode}
+                            isFocusedOnChat={isFocusedOnChat}
+                        />
                     ))}
                 </div>
                 <Bomb />
             </div>
-            <Chat roomCode={roomCode || ""} />
+            <Chat roomCode={roomCode} setIsFocused={setIsFocusedOnChat} />
         </div>
     );
 }

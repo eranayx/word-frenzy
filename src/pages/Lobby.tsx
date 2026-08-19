@@ -5,21 +5,35 @@ import { User } from "@boxicons/react";
 
 import Chat from "../components/Chat";
 import { useSocketContext } from "../contexts/SocketContext";
+import { MAX_LOBBY_SIZE } from "../../shared/constants";
 import type { Player } from "../../shared/types";
 import "../css/Lobby.css";
 
 function Lobby() {
-    const MAX_PLAYERS = 8;
+    const [player, setPlayer] = useState<Player>();
+    const [playersList, setPlayersList] = useState<Player[]>([]);
     const navigate = useNavigate();
     const { roomCode } = useParams();
-    const socket = useSocketContext();
+    const { socket, isConnected } = useSocketContext();
 
-    const [players, setPlayers] = useState<Player[]>([]);
+    if (!socket || !isConnected) return;
+
     useEffect(() => {
-        if (!socket) return;
+        const getPlayer = async (): Promise<void> => {
+            const player: Player = await socket.emitWithAck(
+                "get_current_player",
+                socket.id,
+            );
 
+            setPlayer(player);
+        };
+
+        getPlayer();
+    }, []);
+
+    useEffect(() => {
         function updatePlayers(data: Player[]): void {
-            setPlayers(data);
+            setPlayersList(data);
         }
 
         socket.on("player_joined", updatePlayers);
@@ -31,30 +45,47 @@ function Lobby() {
         };
     }, []);
 
+    useEffect(() => {
+        function handleStartGame(): void {
+            navigate(`/play/${roomCode}`);
+        }
+
+        socket.on("start_game", handleStartGame);
+
+        return () => {
+            socket.off("start_game", handleStartGame);
+        };
+    }, []);
+
     return (
         <div className="host-page">
             <div className="lobby">
                 <h1 className="game-name">Word Frenzy</h1>
                 <h1>
-                    {players.length} / {MAX_PLAYERS} | Room Code: {roomCode}
+                    {playersList.length} / {MAX_LOBBY_SIZE} | Room Code:{" "}
+                    {roomCode}
                 </h1>
                 <div className="players-lobby">
-                    {players.map((player) => (
+                    {playersList.map((player) => (
                         <div className="player" key={player.id}>
                             <User />
                             <p className="player-name">{player.name}</p>
                         </div>
                     ))}
                 </div>
-                <button
-                    className={`cta-btn ${players.length > 1 ? "btn-active" : "btn-disabled"}`}
-                    onClick={() => {
-                        if (players.length > 1) {
-                            navigate(`/play/${roomCode}`);
-                        }
-                    }}>
-                    Play
-                </button>
+                {player?.role === "host" ? (
+                    <button
+                        className={`cta-btn ${playersList.length > 1 ? "btn-active" : "btn-disabled"}`}
+                        onClick={() => {
+                            if (playersList.length > 1) {
+                                socket.emit("start_game", roomCode);
+                            }
+                        }}>
+                        Play
+                    </button>
+                ) : (
+                    <></>
+                )}
             </div>
             <Chat roomCode={roomCode || ""} />
         </div>

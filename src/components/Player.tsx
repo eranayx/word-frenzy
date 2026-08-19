@@ -1,50 +1,45 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { Heart, User } from "@boxicons/react";
 
-import { isValidWord } from "../../server/services/api";
 import { useGameContext } from "../contexts/GameContext";
+import { useSocketContext } from "../contexts/SocketContext";
+import { isValidWord } from "../services/api";
+import { Player } from "../../shared/types";
+import { FRENZY_LIMIT, IS_ALPHA } from "../../shared/constants";
 import "../css/Player.css";
 
-type PlayerProps = {
-    name: string;
-};
+interface PlayerProps {
+    player: Player;
+    roomCode: string;
+    isFocusedOnChat: boolean;
+}
 
-function Player({ name }: PlayerProps) {
-    const FRENZY_LIMIT = 30;
-
-    const [word, setWord] = useState<string>("");
-    const [totalPoints, setTotalPoints] = useState<number>(0);
-    const [frenzyPoints, setFrenzyPoints] = useState<number>(0);
-    const { time, substring, resetTime, changeSubstring } = useGameContext();
+function PlayerComponent({ player, roomCode, isFocusedOnChat }: PlayerProps) {
+    const { rawTime, substring } = useGameContext();
+    const { socket, isConnected } = useSocketContext();
 
     useEffect(() => {
+        if (!socket) return;
+
         const handleKeyDown = async (e: KeyboardEvent) => {
+            if (player.id !== socket.id || isFocusedOnChat) return;
+
             if (e.key === "Enter") {
-                if (word.length < 0) return;
-                if (!word.includes(substring)) return;
-                if (!(await isValidWord(word))) return;
-
-                setWord("");
-                setTotalPoints((prev) => prev + time);
-                setFrenzyPoints((prev) => {
-                    if (prev === FRENZY_LIMIT) {
-                        return time;
-                    }
-
-                    return Math.min(prev + time, FRENZY_LIMIT);
-                });
-                resetTime();
-                changeSubstring();
+                if (!(await isValidWord(player.word, substring))) return;
+                socket.emit("entered_word", roomCode, player.id, rawTime);
             }
 
             if (e.key === "Backspace") {
-                setWord((prev) => prev.slice(0, -1));
+                socket.emit("update_word", player.id, player.word.slice(0, -1));
             }
 
-            const IS_ALPHA: RegExp = /^[A-za-z]$/;
             if (IS_ALPHA.test(e.key)) {
-                setWord((prev) => prev + e.key.toLowerCase());
+                socket.emit(
+                    "update_word",
+                    player.id,
+                    player.word + e.key.toLowerCase(),
+                );
             }
         };
 
@@ -53,7 +48,9 @@ function Player({ name }: PlayerProps) {
         return () => {
             document.removeEventListener("keydown", handleKeyDown);
         };
-    }, [time]);
+    }, [player]);
+
+    if (!socket || !isConnected) return;
 
     return (
         <div className="player">
@@ -62,19 +59,19 @@ function Player({ name }: PlayerProps) {
                 <Heart pack="filled" />
             </div>
             <User />
-            <p className="name">{name}</p>
-            <p className="word">{word}</p>
+            <p className="name">{player.name}</p>
+            <p className="word">{player.word}</p>
             <div className="frenzy-bar-container">
                 <div
                     className="frenzy-bar"
                     style={{
-                        width: `${(frenzyPoints / FRENZY_LIMIT) * 100}%`,
+                        width: `${(player.frenzyPoints / FRENZY_LIMIT) * 100}%`,
                         transition: "all 0.75s ease-out",
                     }}></div>
             </div>
-            <p className="points">{totalPoints} pts</p>
+            <p className="points">{player.totalPoints} pts</p>
         </div>
     );
 }
 
-export default Player;
+export default PlayerComponent;

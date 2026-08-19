@@ -14,7 +14,8 @@ export const getPlayerFromId = (id: string): Player => {
     const player = players.find((player) => player.id === id);
 
     if (!player) {
-        throw new Error("Attempted to search for invalid player id.");
+        console.log(id);
+        throw new Error(`Attempted to search for invalid player id: ${id}`);
     }
 
     return player;

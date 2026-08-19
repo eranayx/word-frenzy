@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express from "express";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 import cors from "cors";
@@ -9,11 +9,18 @@ import {
     addPlayer,
     getJoinableRoomCode,
     getPlayers,
+    isRoomFull,
     isValidRoomCode,
-} from "./services/rooms";
-import { getPlayerFromId } from "./services/playerServices";
+    refreshSubstring,
+    refreshTimer,
+    startTimer,
+} from "./services/roomService";
+import { getPlayerFromId } from "./services/playerService";
+import dictionaryRoute from "./routes/dictionaryRoute";
+import randomWordRoute from "./routes/randomWordRoute";
+import { FRENZY_LIMIT } from "../shared/constants";
 
-const app: Express = express();
+const app = express();
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
@@ -22,18 +29,17 @@ const io = new Server(server, {
     },
 });
 
-app.use(cors());
+app.use(cors({ origin: "http://localhost:5173" }));
 
 io.on("connection", (socket) => {
     console.log(`User connected: ${socket.id}`);
 
     socket.on("send_message", (data: Message, roomCode: string): void => {
-        // let roomCode = ""
         io.to(roomCode).emit("recieve_message", data);
     });
 
     socket.on(
-        "get_player",
+        "get_current_player",
         (socketId: string, callback: (player: Player) => void): void => {
             const player = getPlayerFromId(socketId);
             callback(player);
@@ -53,7 +59,7 @@ io.on("connection", (socket) => {
     socket.on(
         "check_valid_code",
         (roomCode: string, callback: (isValid: boolean) => void): void => {
-            const isValid = isValidRoomCode(roomCode);
+            const isValid = isValidRoomCode(roomCode) && !isRoomFull(roomCode);
             callback(isValid);
         },
     );
@@ -65,8 +71,65 @@ io.on("connection", (socket) => {
             callback(joinableRoomCode);
         },
     );
+
+    socket.on("start_game", async (roomCode: string): Promise<void> => {
+        io.to(roomCode).emit("start_game");
+        startTimer(roomCode, io);
+    });
+
+    socket.on("update_word", (playerId: string, word: string): void => {
+        const player = getPlayerFromId(playerId);
+
+        if (!player.current_room) {
+            throw new Error(
+                "update_word event called when player is not in a room.",
+            );
+        }
+
+        player.word = word;
+        io.to(player.current_room).emit(
+            "word_updated",
+            getPlayers(player.current_room),
+        );
+    });
+
+    socket.on(
+        "entered_word",
+        (roomCode: string, playerId: string, time: number): void => {
+            const player = getPlayerFromId(playerId);
+            if (!player.current_room) {
+                throw new Error(
+                    "update_word event called when player is not in a room.",
+                );
+            }
+
+            player.word = "";
+            player.totalPoints += time;
+            player.frenzyPoints =
+                player.frenzyPoints === FRENZY_LIMIT
+                    ? time
+                    : Math.min(player.frenzyPoints + time, FRENZY_LIMIT);
+
+            refreshTimer(roomCode);
+            refreshSubstring(roomCode, io);
+            io.to(player.current_room).emit(
+                "word_updated",
+                getPlayers(player.current_room),
+            );
+        },
+    );
 });
 
 server.listen(process.env.SERVER_PORT || 8080, () => {
-    console.log(`server is running at port ${process.env.SERVER_PORT}`);
+    console.log(
+        `(socket.io) server is running at port ${process.env.SERVER_PORT}`,
+    );
 });
+
+app.listen(process.env.SERVER_PORT || 8080, () => {
+    console.log(
+        `(express) server is running at port ${process.env.SERVER_PORT}`,
+    );
+});
+
+app.use("/api", dictionaryRoute, randomWordRoute);
