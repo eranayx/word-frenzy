@@ -1,5 +1,4 @@
-import { addPlayer as addPlayerGlobal } from "./playerService";
-import type { Player, Room } from "../../shared/types";
+import { addPlayer as addPlayerGlobal } from "../services/playerService";
 import {
     DEFAULT_SUBSTRING_LENGTH,
     MAX_LOBBY_SIZE,
@@ -7,6 +6,8 @@ import {
 } from "../../shared/constants";
 import type { Server } from "socket.io";
 import { getRandomSubstring } from "./randomWordService";
+import type Player from "../classes/Player";
+import Room from "../classes/Room";
 
 const rooms = new Map<string, Room>();
 
@@ -16,11 +17,8 @@ export const getPlayers = (roomCode: string): Player[] => {
 };
 
 export const addPlayer = (player: Player, roomCode: string): void => {
-    const room = rooms.get(roomCode) ?? {
-        players: [],
-        state: "lobby",
-        timer: 0,
-    };
+    const room = rooms.get(roomCode) ?? new Room([]);
+
     room.players.push(player);
     rooms.set(roomCode, room);
     addPlayerGlobal(player);
@@ -94,7 +92,7 @@ export const refreshSubstring = async (
     const room = getRoom(roomCode);
 
     const substring = await getRandomSubstring(
-        room.substring_length ?? DEFAULT_SUBSTRING_LENGTH,
+        room.substringLength ?? DEFAULT_SUBSTRING_LENGTH,
     );
     io.to(roomCode).emit("recieved_substring", substring);
 };

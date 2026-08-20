@@ -4,7 +4,8 @@ import { Server } from "socket.io";
 import cors from "cors";
 import "dotenv/config";
 
-import type { Message, Player } from "../shared/types";
+import type { Message } from "../shared/interfaces";
+import Player from "./classes/Player";
 import {
     addPlayer,
     getJoinableRoomCode,
@@ -18,7 +19,6 @@ import {
 import { getPlayerFromId } from "./services/playerService";
 import dictionaryRoute from "./routes/dictionaryRoute";
 import randomWordRoute from "./routes/randomWordRoute";
-import { FRENZY_LIMIT } from "../shared/constants";
 
 const app = express();
 const server = createServer(app);
@@ -50,11 +50,20 @@ io.on("connection", (socket) => {
         io.to(roomCode).emit("recieve_players", getPlayers(roomCode));
     });
 
-    socket.on("add_player", (player: Player, roomCode: string): void => {
-        addPlayer(player, roomCode);
-        socket.join(roomCode);
-        io.to(roomCode).emit("player_joined", getPlayers(roomCode));
-    });
+    socket.on(
+        "add_player",
+        (
+            player: { name: string; playerId: string; role: "host" | "player" },
+            roomCode: string,
+        ): void => {
+            addPlayer(
+                new Player(player.name, player.playerId, player.role, roomCode),
+                roomCode,
+            );
+            socket.join(roomCode);
+            io.to(roomCode).emit("player_joined", getPlayers(roomCode));
+        },
+    );
 
     socket.on(
         "check_valid_code",
@@ -80,41 +89,38 @@ io.on("connection", (socket) => {
     socket.on("update_word", (playerId: string, word: string): void => {
         const player = getPlayerFromId(playerId);
 
-        if (!player.current_room) {
+        if (!player.currentRoomCode) {
             throw new Error(
                 "update_word event called when player is not in a room.",
             );
         }
 
         player.word = word;
-        io.to(player.current_room).emit(
+        io.to(player.currentRoomCode).emit(
             "word_updated",
-            getPlayers(player.current_room),
+            getPlayers(player.currentRoomCode),
         );
     });
 
     socket.on(
         "entered_word",
-        (roomCode: string, playerId: string, time: number): void => {
+        async (playerId: string, time: number): Promise<void> => {
             const player = getPlayerFromId(playerId);
-            if (!player.current_room) {
+            if (!player.currentRoomCode) {
                 throw new Error(
                     "update_word event called when player is not in a room.",
                 );
             }
 
             player.word = "";
-            player.totalPoints += time;
-            player.frenzyPoints =
-                player.frenzyPoints === FRENZY_LIMIT
-                    ? time
-                    : Math.min(player.frenzyPoints + time, FRENZY_LIMIT);
+            player.addPoints(time);
+            console.log(player.totalPoints);
 
-            refreshTimer(roomCode);
-            refreshSubstring(roomCode, io);
-            io.to(player.current_room).emit(
+            await refreshSubstring(player.currentRoomCode, io);
+            refreshTimer(player.currentRoomCode);
+            io.to(player.currentRoomCode).emit(
                 "word_updated",
-                getPlayers(player.current_room),
+                getPlayers(player.currentRoomCode),
             );
         },
     );

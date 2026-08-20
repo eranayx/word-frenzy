@@ -19,7 +19,7 @@ export const getRandomSubstring = async (
 
 const isRealWord = async (word: string): Promise<{ isReal: boolean }> => {
     const response = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/api/define/${word}`,
+        `${import.meta.env.VITE_SERVER_URL}/api/isReal/${word}`,
     );
     return response.json();
 };

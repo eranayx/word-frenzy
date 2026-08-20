@@ -5,17 +5,16 @@ import { Heart, User } from "@boxicons/react";
 import { useGameContext } from "../contexts/GameContext";
 import { useSocketContext } from "../contexts/SocketContext";
 import { isValidWord } from "../services/api";
-import { Player } from "../../shared/types";
+import type { PlayerData as Player } from "../../shared/interfaces";
 import { FRENZY_LIMIT, IS_ALPHA } from "../../shared/constants";
 import "../css/Player.css";
 
 interface PlayerProps {
     player: Player;
-    roomCode: string;
     isFocusedOnChat: boolean;
 }
 
-function PlayerComponent({ player, roomCode, isFocusedOnChat }: PlayerProps) {
+function PlayerComponent({ player, isFocusedOnChat }: PlayerProps) {
     const { rawTime, substring } = useGameContext();
     const { socket, isConnected } = useSocketContext();
 
@@ -23,11 +22,12 @@ function PlayerComponent({ player, roomCode, isFocusedOnChat }: PlayerProps) {
         if (!socket) return;
 
         const handleKeyDown = async (e: KeyboardEvent) => {
-            if (player.id !== socket.id || isFocusedOnChat) return;
+            if (!player || player.id !== socket.id || isFocusedOnChat) return;
 
             if (e.key === "Enter") {
                 if (!(await isValidWord(player.word, substring))) return;
-                socket.emit("entered_word", roomCode, player.id, rawTime);
+                socket.emit("entered_word", player.id, rawTime);
+                console.log(player.totalPoints);
             }
 
             if (e.key === "Backspace") {
@@ -59,8 +59,8 @@ function PlayerComponent({ player, roomCode, isFocusedOnChat }: PlayerProps) {
                 <Heart pack="filled" />
             </div>
             <User />
-            <p className="name">{player.name}</p>
-            <p className="word">{player.word}</p>
+            <p className="name">{player?.name}</p>
+            <p className="word">{player?.word}</p>
             <div className="frenzy-bar-container">
                 <div
                     className="frenzy-bar"

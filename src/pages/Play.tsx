@@ -5,7 +5,7 @@ import Bomb from "../components/Bomb";
 import Chat from "../components/Chat";
 import { useSocketContext } from "../contexts/SocketContext";
 import PlayerComponent from "../components/Player";
-import type { Player } from "../../shared/types";
+import type { PlayerData as Player } from "../../shared/interfaces";
 import "../css/Play.css";
 
 function Play() {
@@ -55,7 +55,6 @@ function Play() {
                         <PlayerComponent
                             key={player.id}
                             player={player}
-                            roomCode={roomCode}
                             isFocusedOnChat={isFocusedOnChat}
                         />
                     ))}

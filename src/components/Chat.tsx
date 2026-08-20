@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 
 import { Send, User } from "@boxicons/react";
 
-import type { Message, Player } from "../../shared/types";
+import type { Message } from "../../shared/interfaces";
+import type { PlayerData as Player } from "../../shared/interfaces";
 import { useSocketContext } from "../contexts/SocketContext";
 import "../css/Chat.css";
 

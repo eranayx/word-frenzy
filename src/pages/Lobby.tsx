@@ -6,7 +6,7 @@ import { User } from "@boxicons/react";
 import Chat from "../components/Chat";
 import { useSocketContext } from "../contexts/SocketContext";
 import { MAX_LOBBY_SIZE } from "../../shared/constants";
-import type { Player } from "../../shared/types";
+import type { PlayerData as Player } from "../../shared/interfaces";
 import "../css/Lobby.css";
 
 function Lobby() {
@@ -16,9 +16,9 @@ function Lobby() {
     const { roomCode } = useParams();
     const { socket, isConnected } = useSocketContext();
 
-    if (!socket || !isConnected) return;
-
     useEffect(() => {
+        if (!socket) return;
+
         const getPlayer = async (): Promise<void> => {
             const player: Player = await socket.emitWithAck(
                 "get_current_player",
@@ -32,6 +32,8 @@ function Lobby() {
     }, []);
 
     useEffect(() => {
+        if (!socket) return;
+
         function updatePlayers(data: Player[]): void {
             setPlayersList(data);
         }
@@ -46,6 +48,8 @@ function Lobby() {
     }, []);
 
     useEffect(() => {
+        if (!socket) return;
+
         function handleStartGame(): void {
             navigate(`/play/${roomCode}`);
         }
@@ -56,6 +60,8 @@ function Lobby() {
             socket.off("start_game", handleStartGame);
         };
     }, []);
+
+    if (!socket || !isConnected) return;
 
     return (
         <div className="host-page">

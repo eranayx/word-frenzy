@@ -4,7 +4,7 @@ import { isRealWord } from "../services/dictionaryService";
 
 const router = express.Router();
 
-router.get("/define/:word", async (req, res) => {
+router.get("/isReal/:word", async (req, res) => {
     try {
         const word = req.params.word;
         const isReal = await isRealWord(word);
