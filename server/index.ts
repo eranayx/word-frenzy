@@ -9,11 +9,9 @@ import Player from "./classes/Player";
 import {
     addPlayer,
     getJoinableRoomCode,
-    getPlayers,
-    isRoomFull,
+    getRoom,
     isValidRoomCode,
     refreshSubstring,
-    refreshTimer,
     startTimer,
 } from "./services/roomService";
 import { getPlayerFromId } from "./services/playerService";
@@ -47,7 +45,8 @@ io.on("connection", (socket) => {
     );
 
     socket.on("get_players", (roomCode: string): void => {
-        io.to(roomCode).emit("recieve_players", getPlayers(roomCode));
+        const room = getRoom(roomCode);
+        io.to(roomCode).emit("recieve_players", room.getPlayers());
     });
 
     socket.on(
@@ -56,19 +55,22 @@ io.on("connection", (socket) => {
             player: { name: string; playerId: string; role: "host" | "player" },
             roomCode: string,
         ): void => {
+            const room = getRoom(roomCode);
+
             addPlayer(
                 new Player(player.name, player.playerId, player.role, roomCode),
                 roomCode,
             );
             socket.join(roomCode);
-            io.to(roomCode).emit("player_joined", getPlayers(roomCode));
+            io.to(roomCode).emit("player_joined", room.getPlayers());
         },
     );
 
     socket.on(
         "check_valid_code",
         (roomCode: string, callback: (isValid: boolean) => void): void => {
-            const isValid = isValidRoomCode(roomCode) && !isRoomFull(roomCode);
+            const isValid =
+                isValidRoomCode(roomCode) && getRoom(roomCode).isRoomFull();
             callback(isValid);
         },
     );
@@ -96,10 +98,9 @@ io.on("connection", (socket) => {
         }
 
         player.word = word;
-        io.to(player.currentRoomCode).emit(
-            "word_updated",
-            getPlayers(player.currentRoomCode),
-        );
+
+        const room = getRoom(player.currentRoomCode);
+        io.to(player.currentRoomCode).emit("word_updated", room.getPlayers());
     });
 
     socket.on(
@@ -114,13 +115,14 @@ io.on("connection", (socket) => {
 
             player.word = "";
             player.addPoints(time);
-            console.log(player.totalPoints);
 
             await refreshSubstring(player.currentRoomCode, io);
-            refreshTimer(player.currentRoomCode);
+
+            const room = getRoom(player.currentRoomCode);
+            room.refreshTimer();
             io.to(player.currentRoomCode).emit(
                 "word_updated",
-                getPlayers(player.currentRoomCode),
+                room.getPlayers(),
             );
         },
     );
