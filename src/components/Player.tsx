@@ -28,8 +28,6 @@ function PlayerComponent({ player, isFocusedOnChat }: PlayerProps) {
             if (e.key === "Enter") {
                 if (!(await isValidWord(player.word, substring))) return;
                 socket.emit("entered_word", player.id, rawTime);
-                console.log("total", player.totalPoints)
-                console.log("frenzy", player.frenzyPoints)
             }
 
             if (e.key === "Backspace") {
@@ -62,8 +60,9 @@ function PlayerComponent({ player, isFocusedOnChat }: PlayerProps) {
     return (
         <div className={`player ${player.id === typerId ? "active" : ""}`}>
             <div className="hearts">
-                <Heart pack="filled" />
-                <Heart pack="filled" />
+                {Array.from({ length: player.health }, (_, i) => (
+                    <Heart key={i} pack="filled" />
+                ))}
             </div>
             <User />
             <p className={`name ${player.id === socket.id ? "is-user" : ""}`}>

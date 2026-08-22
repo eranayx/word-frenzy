@@ -3,6 +3,7 @@ export interface PlayerData {
     name: string;
     role: "host" | "player";
     word: string;
+    health: number;
     totalPoints: number;
     frenzyPoints: number;
     currentRoomCode: string;

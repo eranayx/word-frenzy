@@ -15,8 +15,9 @@ class Room {
 
     private _timer: number = 1;
     private _substringLength: number = DEFAULT_SUBSTRING_LENGTH;
-    private _typers_id: string | null = null;
-    private _typers_idx: number | null = null;
+    private _typersId: string | null = null;
+    private _typersIdx: number | null = null;
+    private _playersAlive: number = 0;
 
     // Constructor(s)
     constructor(players: Player[]) {
@@ -42,16 +43,25 @@ class Room {
         this._substringLength = v;
     }
 
-    public get typers_id(): string {
-        if (this._typers_id === null) {
+    public get typersId(): string {
+        if (this._typersId === null) {
             throw new Error("The room is empty; it's no one's turn.");
         }
 
-        return this._typers_id;
+        return this._typersId;
     }
 
-    private set typers_id(v: string) {
-        this._typers_id = v;
+    private set typersId(v: string) {
+        this._typersId = v;
+    }
+
+    public get playersAlive(): number {
+        return this._playersAlive;
+    }
+
+    public set playersAlive(v: number) {
+        if (v < 0) throw new Error("Timer must be nonnegative.");
+        this._playersAlive = v;
     }
 
     // Class methods
@@ -61,6 +71,7 @@ class Room {
 
     public addPlayer = (player: Player): void => {
         this.players.push(player);
+        this.playersAlive++;
     };
 
     public isRoomFull = (): boolean => {
@@ -68,11 +79,11 @@ class Room {
     };
 
     public determineNextTyper = (): void => {
-        this._typers_idx =
-            this._typers_idx === null
+        this._typersIdx =
+            this._typersIdx === null
                 ? Math.floor(Math.random() * this.players.length)
-                : (this._typers_idx + 1) % this.players.length;
-        this.typers_id = this.players[this._typers_idx].id;
+                : (this._typersIdx + 1) % this.players.length;
+        this.typersId = this.players[this._typersIdx].id;
         this.resetTypersWord();
     };
 
@@ -86,7 +97,7 @@ class Room {
         return this.timer === 0;
     };
 
-    public endTimer = (): void => {
+    public stopTimer = (): void => {
         if (this.timerTimeout) {
             clearTimeout(this.timerTimeout);
             this.timerTimeout = undefined;
@@ -102,8 +113,8 @@ class Room {
     }
 
     private resetTypersWord = () => {
-        if (this._typers_idx === null) return;
-        this.players[this._typers_idx].resetWord();
+        if (this._typersIdx === null) return;
+        this.players[this._typersIdx].resetWord();
     };
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import Bomb from "../components/Bomb";
 import Chat from "../components/Chat";
@@ -13,35 +13,31 @@ function Play() {
     const { roomCode } = useParams();
     const [players, setPlayers] = useState<Player[]>([]);
     const [isFocusedOnChat, setIsFocusedOnChat] = useState<boolean>(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (!socket) return;
 
-        function updatePlayers(data: Player[]): void {
-            setPlayers(data);
+        function updatePlayers(v: Player[]): void {
+            setPlayers(v);
+        }
+
+        function navigateToWinnerScreen(): void {
+            navigate(`/winner/${roomCode}`);
         }
 
         socket.on("player_joined", updatePlayers);
         socket.on("recieve_players", updatePlayers);
+        socket.on("word_updated", updatePlayers);
+        socket.on("game_over", navigateToWinnerScreen);
         socket.emit("get_players", roomCode);
         socket.emit("get_current_typer", roomCode);
 
         return () => {
             socket.off("player_joined", updatePlayers);
-        };
-    }, []);
-
-    useEffect(() => {
-        if (!socket) return;
-
-        function updatePlayers(v: Player[]) {
-            setPlayers(v);
-        }
-
-        socket.on("word_updated", updatePlayers);
-
-        return () => {
-            socket.off("word_updated");
+            socket.off("recieve_players", updatePlayers);
+            socket.off("word_updated", updatePlayers);
+            socket.off("game_over", navigateToWinnerScreen);
         };
     }, []);
 

@@ -93,7 +93,7 @@ io.on("connection", (socket) => {
 
     socket.on("get_current_typer", (roomCode: string): void => {
         const room = getRoom(roomCode);
-        io.to(roomCode).emit("typer_updated", room.typers_id);
+        io.to(roomCode).emit("typer_updated", room.typersId);
     });
 
     socket.on("update_word", (playerId: string, word: string): void => {
@@ -123,7 +123,7 @@ io.on("connection", (socket) => {
 
             const room = getRoom(player.currentRoomCode);
             room.determineNextTyper();
-            io.to(player.currentRoomCode).emit("typer_updated", room.typers_id);
+            io.to(player.currentRoomCode).emit("typer_updated", room.typersId);
 
             player.addPoints(time);
 
@@ -136,6 +136,14 @@ io.on("connection", (socket) => {
             );
         },
     );
+
+    socket.on("get_winner", (roomCode: string): void => {
+        const room = getRoom(roomCode);
+        io.to(roomCode).emit(
+            "recieved_winner",
+            room.players.find((player) => player.health > 0),
+        );
+    });
 });
 
 server.listen(process.env.SERVER_PORT || 8080, () => {

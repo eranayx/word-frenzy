@@ -1,4 +1,4 @@
-import { FRENZY_LIMIT } from "../../shared/constants";
+import { DEFAULT_HEALTH_AMOUNT, FRENZY_LIMIT } from "../../shared/constants";
 import type { PlayerData } from "../../shared/interfaces";
 
 class Player implements PlayerData {
@@ -10,6 +10,7 @@ class Player implements PlayerData {
     public currentRoomCode: string;
     public word = "";
 
+    private _health = DEFAULT_HEALTH_AMOUNT;
     private _totalPoints = 0;
     private _frenzyPoints = 0;
 
@@ -23,6 +24,15 @@ class Player implements PlayerData {
         this.id = id;
         this.role = role;
         this.currentRoomCode = currentRoomCode ?? null;
+    }
+
+    public get health(): number {
+        return this._health;
+    }
+
+    public set health(v: number) {
+        if (v < 0) throw new Error("Health must be nonnegative.");
+        this._health = v;
     }
 
     public get totalPoints(): number {
@@ -66,6 +76,7 @@ class Player implements PlayerData {
             name: this.name,
             role: this.role,
             word: this.word,
+            health: this.health,
             totalPoints: this.totalPoints,
             frenzyPoints: this.frenzyPoints,
             currentRoomCode: this.currentRoomCode,

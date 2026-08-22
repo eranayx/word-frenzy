@@ -1,9 +1,13 @@
-import { addPlayer as addPlayerGlobal } from "../services/playerService";
-import { DEFAULT_SUBSTRING_LENGTH } from "../../shared/constants";
 import type { Server } from "socket.io";
-import { getRandomSubstring } from "./randomWordService";
-import type Player from "../classes/Player";
+
 import Room from "../classes/Room";
+import Player from "../classes/Player";
+import { getRandomSubstring } from "./randomWordService";
+import {
+    addPlayer as addPlayerGlobal,
+    getPlayerFromId,
+} from "../services/playerService";
+import { DEFAULT_SUBSTRING_LENGTH } from "../../shared/constants";
 
 const rooms = new Map<string, Room>();
 
@@ -11,7 +15,7 @@ export const getRoom = (roomCode: string): Room => {
     const room = rooms.get(roomCode);
 
     if (!room) {
-        throw new Error(`Invalid room code: ${roomCode}`);
+        throw new Error("Invalid room code");
     }
 
     return room;
@@ -48,9 +52,23 @@ export const startTimer = (roomCode: string, io: Server): void => {
         if (hitZero) {
             await refreshSubstring(roomCode, io);
 
+            const typer = getPlayerFromId(room.typersId);
+            typer.health--;
+            io.to(roomCode).emit("recieve_players", room.getPlayers());
+
+            if (typer.health === 0) {
+                room.playersAlive--;
+            }
+
+            if (room.playersAlive <= 1) {
+                room.stopTimer();
+                io.to(roomCode).emit("game_over");
+                return;
+            }
+
             room.determineNextTyper();
             io.to(roomCode).emit("recieve_players", room.getPlayers());
-            io.to(roomCode).emit("typer_updated", room.typers_id);
+            io.to(roomCode).emit("typer_updated", room.typersId);
         }
 
         io.to(roomCode).emit(

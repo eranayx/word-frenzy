@@ -20,7 +20,7 @@ const router = createBrowserRouter([
             </GameProvider>
         ),
     },
-    { path: "/winner", element: <Winner /> },
+    { path: "/winner/:roomCode", element: <Winner /> },
     { path: "*", element: <PageNotFound /> },
 ]);
 
