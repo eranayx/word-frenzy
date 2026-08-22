@@ -47,6 +47,10 @@ export const startTimer = (roomCode: string, io: Server): void => {
         const hitZero = room.advanceTimer();
         if (hitZero) {
             await refreshSubstring(roomCode, io);
+
+            room.determineNextTyper();
+            io.to(roomCode).emit("recieve_players", room.getPlayers());
+            io.to(roomCode).emit("typer_updated", room.typers_id);
         }
 
         io.to(roomCode).emit(

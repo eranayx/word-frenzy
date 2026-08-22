@@ -15,19 +15,21 @@ interface PlayerProps {
 }
 
 function PlayerComponent({ player, isFocusedOnChat }: PlayerProps) {
-    const { rawTime, substring } = useGameContext();
+    const { rawTime, substring, typerId } = useGameContext();
     const { socket, isConnected } = useSocketContext();
 
     useEffect(() => {
         if (!socket) return;
 
-        const handleKeyDown = async (e: KeyboardEvent) => {
-            if (!player || player.id !== socket.id || isFocusedOnChat) return;
-
+        const handleKeyDown = async (e: KeyboardEvent): Promise<void> => {
+            if (!player || player.id !== socket.id || isFocusedOnChat) {
+                return;
+            }
             if (e.key === "Enter") {
                 if (!(await isValidWord(player.word, substring))) return;
                 socket.emit("entered_word", player.id, rawTime);
-                console.log(player.totalPoints);
+                console.log("total", player.totalPoints)
+                console.log("frenzy", player.frenzyPoints)
             }
 
             if (e.key === "Backspace") {
@@ -43,24 +45,31 @@ function PlayerComponent({ player, isFocusedOnChat }: PlayerProps) {
             }
         };
 
+        if (player.id !== typerId) {
+            document.removeEventListener("keydown", handleKeyDown);
+            return;
+        }
+
         document.addEventListener("keydown", handleKeyDown);
 
         return () => {
             document.removeEventListener("keydown", handleKeyDown);
         };
-    }, [player]);
+    }, [player, typerId, isFocusedOnChat]);
 
     if (!socket || !isConnected) return;
 
     return (
-        <div className="player">
+        <div className={`player ${player.id === typerId ? "active" : ""}`}>
             <div className="hearts">
                 <Heart pack="filled" />
                 <Heart pack="filled" />
             </div>
             <User />
-            <p className="name">{player?.name}</p>
-            <p className="word">{player?.word}</p>
+            <p className={`name ${player.id === socket.id ? "is-user" : ""}`}>
+                {player.name}
+            </p>
+            <p className="word">{player.word}</p>
             <div className="frenzy-bar-container">
                 <div
                     className="frenzy-bar"

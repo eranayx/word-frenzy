@@ -22,8 +22,9 @@ function Play() {
         }
 
         socket.on("player_joined", updatePlayers);
-        socket.once("recieve_players", updatePlayers);
+        socket.on("recieve_players", updatePlayers);
         socket.emit("get_players", roomCode);
+        socket.emit("get_current_typer", roomCode);
 
         return () => {
             socket.off("player_joined", updatePlayers);
@@ -33,9 +34,11 @@ function Play() {
     useEffect(() => {
         if (!socket) return;
 
-        socket.on("word_updated", (updatedPlayers: Player[]) => {
-            setPlayers(updatedPlayers);
-        });
+        function updatePlayers(v: Player[]) {
+            setPlayers(v);
+        }
+
+        socket.on("word_updated", updatePlayers);
 
         return () => {
             socket.off("word_updated");

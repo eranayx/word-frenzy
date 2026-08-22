@@ -7,7 +7,7 @@ class Player implements PlayerData {
     public readonly id: string;
 
     public role: "host" | "player";
-    public currentRoomCode: string | null;
+    public currentRoomCode: string;
     public word = "";
 
     private _totalPoints = 0;
@@ -40,12 +40,24 @@ class Player implements PlayerData {
 
     private set frenzyPoints(v: number) {
         if (v < 0) throw new Error("Total points must be nonnegative.");
-        this._frenzyPoints = v <= FRENZY_LIMIT ? v : FRENZY_LIMIT;
+
+        if (this.frenzyPoints === FRENZY_LIMIT) {
+            this._frenzyPoints = v - FRENZY_LIMIT;
+        } else if (v <= FRENZY_LIMIT) {
+            this._frenzyPoints = v;
+        } else if (v > FRENZY_LIMIT) {
+            this._frenzyPoints = FRENZY_LIMIT;
+        }
     }
 
+    // Instance methods
     public addPoints(v: number): void {
         this.totalPoints += v;
         this.frenzyPoints += v;
+    }
+
+    public resetWord(): void {
+        this.word = "";
     }
 
     toJSON() {
@@ -56,6 +68,7 @@ class Player implements PlayerData {
             word: this.word,
             totalPoints: this.totalPoints,
             frenzyPoints: this.frenzyPoints,
+            currentRoomCode: this.currentRoomCode,
         };
     }
 }

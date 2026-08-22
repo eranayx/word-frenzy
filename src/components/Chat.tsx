@@ -6,6 +6,7 @@ import type { Message } from "../../shared/interfaces";
 import type { PlayerData as Player } from "../../shared/interfaces";
 import { useSocketContext } from "../contexts/SocketContext";
 import "../css/Chat.css";
+import { generateKeySuffix } from "../../shared/utils";
 
 interface ChatProps {
     roomCode: string;
@@ -65,7 +66,9 @@ function Chat({ roomCode, setIsFocused }: ChatProps) {
         <div className="chat">
             <div className="message-history">
                 {messageHistory.map((msg) => (
-                    <div className="message" key={msg.sender.id}>
+                    <div
+                        className="message"
+                        key={msg.sender.id + generateKeySuffix()}>
                         <User size="xs" />
                         <p>
                             {msg.sender.name}: {msg.message}

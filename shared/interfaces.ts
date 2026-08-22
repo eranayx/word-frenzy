@@ -5,7 +5,7 @@ export interface PlayerData {
     word: string;
     totalPoints: number;
     frenzyPoints: number;
-    currentRoomCode: string | null;
+    currentRoomCode: string;
 }
 
 export interface Message {

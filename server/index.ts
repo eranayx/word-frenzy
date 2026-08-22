@@ -55,13 +55,13 @@ io.on("connection", (socket) => {
             player: { name: string; playerId: string; role: "host" | "player" },
             roomCode: string,
         ): void => {
-            const room = getRoom(roomCode);
-
             addPlayer(
                 new Player(player.name, player.playerId, player.role, roomCode),
                 roomCode,
             );
             socket.join(roomCode);
+
+            const room = getRoom(roomCode);
             io.to(roomCode).emit("player_joined", room.getPlayers());
         },
     );
@@ -70,7 +70,7 @@ io.on("connection", (socket) => {
         "check_valid_code",
         (roomCode: string, callback: (isValid: boolean) => void): void => {
             const isValid =
-                isValidRoomCode(roomCode) && getRoom(roomCode).isRoomFull();
+                isValidRoomCode(roomCode) && !getRoom(roomCode).isRoomFull();
             callback(isValid);
         },
     );
@@ -83,9 +83,17 @@ io.on("connection", (socket) => {
         },
     );
 
-    socket.on("start_game", async (roomCode: string): Promise<void> => {
+    socket.on("start_game", (roomCode: string): void => {
+        const room = getRoom(roomCode);
+        room.determineNextTyper();
+
         io.to(roomCode).emit("start_game");
         startTimer(roomCode, io);
+    });
+
+    socket.on("get_current_typer", (roomCode: string): void => {
+        const room = getRoom(roomCode);
+        io.to(roomCode).emit("typer_updated", room.typers_id);
     });
 
     socket.on("update_word", (playerId: string, word: string): void => {
@@ -113,12 +121,14 @@ io.on("connection", (socket) => {
                 );
             }
 
-            player.word = "";
+            const room = getRoom(player.currentRoomCode);
+            room.determineNextTyper();
+            io.to(player.currentRoomCode).emit("typer_updated", room.typers_id);
+
             player.addPoints(time);
 
             await refreshSubstring(player.currentRoomCode, io);
 
-            const room = getRoom(player.currentRoomCode);
             room.refreshTimer();
             io.to(player.currentRoomCode).emit(
                 "word_updated",

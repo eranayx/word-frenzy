@@ -13,10 +13,10 @@ class Room {
     public state: "lobby" | "in game" = "lobby";
     public timerTimeout?: NodeJS.Timeout;
 
-    private _timer: number = 0;
+    private _timer: number = 1;
     private _substringLength: number = DEFAULT_SUBSTRING_LENGTH;
     private _typers_id: string | null = null;
-    private _calling_api: boolean = false;
+    private _typers_idx: number | null = null;
 
     // Constructor(s)
     constructor(players: Player[]) {
@@ -54,10 +54,6 @@ class Room {
         this._typers_id = v;
     }
 
-    public get calling_api(): boolean {
-        return this._calling_api;
-    }
-
     // Class methods
     public getPlayers = (): Player[] => {
         return this.players;
@@ -69,6 +65,15 @@ class Room {
 
     public isRoomFull = (): boolean => {
         return this.players.length === MAX_LOBBY_SIZE;
+    };
+
+    public determineNextTyper = (): void => {
+        this._typers_idx =
+            this._typers_idx === null
+                ? Math.floor(Math.random() * this.players.length)
+                : (this._typers_idx + 1) % this.players.length;
+        this.typers_id = this.players[this._typers_idx].id;
+        this.resetTypersWord();
     };
 
     public advanceTimer = (): boolean => {
@@ -95,6 +100,11 @@ class Room {
     public getFormattedTime(): string {
         return `0:${this.timer >= 10 ? this.timer : `0${this.timer}`}`;
     }
+
+    private resetTypersWord = () => {
+        if (this._typers_idx === null) return;
+        this.players[this._typers_idx].resetWord();
+    };
 }
 
 export default Room;

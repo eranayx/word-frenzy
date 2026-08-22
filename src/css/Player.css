@@ -5,15 +5,15 @@
     align-items: center;
     width: max-content;
     height: fit-content;
-}
+    padding: 1rem;
 
-.name {
-    margin: 0.5rem 0 0 0;
+    svg {
+        margin: 0.5rem 0 0 0;
+    }
 }
 
 .hearts {
     width: 100%;
-    margin-bottom: 1rem;
 }
 
 .word {
@@ -36,4 +36,17 @@
     width: 0%;
     animation: linear 1s forwards;
     border-radius: 5px;
+}
+
+.points {
+    margin-bottom: 0;
+}
+
+.active {
+    border: 3px solid var(--accent);
+    border-radius: 5px;
+}
+
+.is-user {
+    font-weight: 500;
 }
